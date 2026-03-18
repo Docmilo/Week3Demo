@@ -26,7 +26,7 @@ jobs:
           # GITHUB_REF is the fully-formed reference (eg refs/heads/main) of the branch or tage that triggered the workflow run for push event
           echo "Current branch {GITHUB_REF}"
           # or we can just use the short ref name of the branch or tag
-          ehco "Github_ref_name: ${GITHUB_REF_NAME}"
+          echo "Github_ref_name: ${GITHUB_REF_NAME}"
           # How about we get the person who triggered the run / push
           echo "Workflow triggered by: ${{github.actor}}"
 

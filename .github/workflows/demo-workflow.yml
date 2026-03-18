@@ -29,6 +29,8 @@ jobs:
           echo "Github_ref_name: ${GITHUB_REF_NAME}"
           # How about we get the person who triggered the run / push
           echo "Workflow triggered by: ${{github.actor}}"
+          # break the job
+          exit 1
 
   # This workflow contains a single job called "build"
   build:

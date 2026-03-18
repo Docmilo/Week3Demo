@@ -1,11 +1,16 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: DemoWorkflow
+# We require these permissions for the create an issue concurrency: Action at the bottom
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
+    paths-ignore:
+      # ignore paths and markdown files
+      - ".github/workflows/**"
+      - "**/*.md"
     branches: [ "main", "feature-**" ]
   pull_request:
     branches: [ "main" ]
@@ -18,24 +23,33 @@ jobs:
   # Get data on workflow run
   workflow_data:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Print event that triggered the workflow run
+      - name: Print event that triggered the worklfow
         run: echo "Workflow triggered by event ${{github.event_name}}"
       - name: Print branch details
-        run: |
-          # GITHUB_REF is the fully-formed reference (eg refs/heads/main) of the branch or tage that triggered the workflow run for push event
-          echo "Current branch ${GITHUB_REF}"
-          # or we can just use the short ref name of the branch or tag
+        run: | 
+          # github context contains information about the workflow run and the event that triggered it
+          # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#github-context
+          # github.head_ref is the source of the branch of the pull request. Only set when there is a pull request
+          # echo "Pull request source branch: ${github.head_ref}"
+          # GITHUB_REFis one of sceral default environment variables: https://docs.github.com/en/actions/reference/workflows-and-actions/variables#default-environment-variables
+          # GITHUB_REF is the fully-formed reference (eg refs/heads/main_ of the branch or tag that triggered the workflow run for push events. Format chanes for PRs
+          echo "Current branch: {$GITHUB_REF}"
+          # using string manipulation we can remove ref/heads with '##' leaving just the branch name
+          echo "Current branch: ${GITHUB_REF##*/}"
+          # or we can just use theshort ref name of the branch or tag that triggered the workflow run.
           echo "Github_ref_name: ${GITHUB_REF_NAME}"
-          # How about we get the person who triggered the run / push
-          echo "Workflow triggered by: ${{github.actor}}"
-          # break the job
+          # How about who triggered the workflow run from the github context?
+          echo "Workflow triggered by: ${{github.actor}}"     
+          #break the job
           exit 1
 
   # This workflow contains a single job called "build"
   build:
-    #if: ${{ always() }}
-    needs: [workflow_data]
+    # make the job always run regardless
+    #if: ${{always()}}
+    needs: workflow_data
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -53,17 +67,19 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
-   create_issue:
-     needs: [workflow_data, build]
-     if: failure()
-     runs-on: ubuntu-latest
-     permissions:
-       issues: write
-     steps:
-       # Create an issue and assign it to the person who triggered the workflow run
-       - uses: actions/checkout@v6
-       - name: Create a new issue 
-         env:
-           LABEL: "bug"
-           GH_TOKEN: ${{github.token}}
-         run: gh issue create --title "Workflow failure" --assignee "${{github.actor}}" --body "${{github.actor}} you need to fix the workflow file" --label "$LABEL"
+
+  create_issue:
+    needs: [workflow_data, build]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      # Create an issue and assign it to the person who initiated this workflow run
+      - uses: actions/checkout@v6
+      - name: Create a new issue
+        env:
+          LABEL: "bug"
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --title "Workflow failure" --assignee "${{github.actor}}" --body "${{github.actor}} you need to fix the workflow file" --label "$LABEL"
+      
